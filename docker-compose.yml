@@ -2,7 +2,7 @@ version: "3"
 
 services:
   roscore:
-    image: franka_ros:latest
+    image: franka_cbf:latest
     build: .docker
     network_mode: host
     privileged: true
@@ -11,7 +11,7 @@ services:
     command: roscore
 
   cartesian_impedance_control:
-    image: franka_ros:latest
+    image: franka_cbf:latest
     build: .docker
     environment:
       - DISPLAY=${DISPLAY}
@@ -27,7 +27,7 @@ services:
     command: /bin/bash -c '. && catkin_make -j 4 && /catkin_ws/devel/setup.bash && roslaunch --wait force_sensitive_cbf force_sensitive_cbf_controller.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
 
   main:
-    image: franka_ros:latest
+    image: franka_cbf:latest
     build: .docker
     environment:
       - DISPLAY=${DISPLAY}

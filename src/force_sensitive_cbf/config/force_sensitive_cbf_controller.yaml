@@ -1,0 +1,2 @@
+force_sensitive_cbf_controller:
+  type: force_sensitive_cbf/ForceSensitiveCBFController

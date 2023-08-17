@@ -1,6 +1,9 @@
-**NOTE: this is a template repository. Do not clone it; instead, click "Use this template" on GitHub**
 
-# Dockerized Franka ROS interface
+# Collaborative Manipulation using Force-Sensitive Barrier Functions
+
+
+
+## Dockerized Franka ROS interface
 
 This repository allows you to run [`libfranka`](https://frankaemika.github.io/docs/libfranks.html) and [`franka_ros`](https://frankaemika.github.io/docs/franka_ros.html) in a Docker environment (complete with ROS Noetic, GUI access, and networking to the robot with the `FCI_IP` environment variable).
 
@@ -26,7 +29,7 @@ For example, you can test the connection to the robot as follows:
 
 The robot should move in a circle, and an RViz window should open showing a matching 3D model of the robot.
 
-## Controlling the robot via ROS
+### Controlling the robot via ROS
 
 In theory, the `franka_ros` Docker image provides a full installation of all ROS packages needed for full control of the arm. Unfortunately, "full control" means writing a C++ controller to run in real time. To support easier control of the arm, we provide a `docker compose` option that will launch a cartesian impedance controller that will track an equilibrium pose published as a ROS topic.
 
@@ -40,7 +43,7 @@ To run this controller:
 
 When you attach to the `franka_ros-main-1` container, you should see that any files in the `franka_realm` folder have been mounted to the container. This folder is a ROS package, so any scripts you add there will be accessible from inside the container.
 
-## Adding new components
+### Adding new components
 
 By default, the `docker-compose.yml` file launches 3 containers (called "services"):
 

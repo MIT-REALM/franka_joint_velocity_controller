@@ -1,0 +1,7 @@
+<library path="lib/libforce_sensitive_cbf">
+  <class name="force_sensitive_cbf/ForceSensitiveCBFController" type="force_sensitive_cbf::ForceSensitiveCBFController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that combines a force-sensitive CBF with a CLF for force-limited position tracking.
+    </description>
+  </class>
+</library>

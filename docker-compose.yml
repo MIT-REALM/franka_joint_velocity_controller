@@ -7,7 +7,7 @@ services:
     network_mode: host
     privileged: true
     stdin_open: true # docker run -i
-    tty: true        # docker run -t
+    tty: true # docker run -t
     command: roscore
 
   cartesian_impedance_control:
@@ -17,13 +17,14 @@ services:
       - DISPLAY=${DISPLAY}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./src/force_sensitive_cbf:/catkin_ws/src/force_sensitive_cbf
     network_mode: host
     privileged: true
     stdin_open: true # docker run -i
-    tty: true        # docker run -t
+    tty: true # docker run -t
     depends_on:
       - roscore
-    command: /bin/bash -c '. /catkin_ws/devel/setup.bash && roslaunch --wait franka_example_controllers cartesian_impedance_example_controller_no_marker.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
+    command: /bin/bash -c '. && catkin_make -j 4 && /catkin_ws/devel/setup.bash && roslaunch --wait force_sensitive_cbf force_sensitive_cbf_controller.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
 
   main:
     image: franka_ros:latest
@@ -32,12 +33,9 @@ services:
       - DISPLAY=${DISPLAY}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - ./realm:/catkin_ws/src/realm
+      - ./src/force_sensitive_cbf:/catkin_ws/src/force_sensitive_cbf
     network_mode: host
     privileged: true
     stdin_open: true # docker run -i
-    tty: true        # docker run -t
-    depends_on:
-      - roscore
-      - cartesian_impedance_control
+    tty: true # docker run -t
     command: bash

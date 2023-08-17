@@ -67,6 +67,11 @@ namespace force_sensitive_cbf
         double clf_relaxation_penalty_{1.0};
         double clf_relaxation_penalty_target_{1.0};
 
+        // We'll also need to smooth the commanded velocities
+        double velocity_smoothing_{0.002};
+        Eigen::Vector6d velocity_command_;
+        Eigen::Vector6d velocity_command_target_;
+
         // Track the desired position and orientation, with targets for smoothing (same
         // as used for parameters above)
         Eigen::Vector3d position_d_;

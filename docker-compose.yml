@@ -22,9 +22,16 @@ services:
     privileged: true
     stdin_open: true # docker run -i
     tty: true # docker run -t
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      rtprio: 99
+      rttime: -1 # corresponds to 'unlimited'
+      memlock: 8428281856
     depends_on:
       - roscore
-    command: /bin/bash -c '. && catkin_make -j 4 && /catkin_ws/devel/setup.bash && roslaunch --wait force_sensitive_cbf force_sensitive_cbf_controller.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
+    command: /bin/bash -c '. /catkin_ws/devel/setup.bash && catkin_make -j 4 -DCMAKE_BUILD_TYPE=Release && . /catkin_ws/devel/setup.bash && roslaunch --wait force_sensitive_cbf force_sensitive_cbf_controller.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
+    # command: /bin/bash -c '. /catkin_ws/devel/setup.bash && catkin_make -j 4 -DCMAKE_BUILD_TYPE=Release && . /catkin_ws/devel/setup.bash && roslaunch --wait franka_example_controllers cartesian_velocity_example_controller.launch robot:=fr3 robot_ip:=172.16.0.2 load_gripper:=True'
 
   main:
     image: franka_cbf:latest

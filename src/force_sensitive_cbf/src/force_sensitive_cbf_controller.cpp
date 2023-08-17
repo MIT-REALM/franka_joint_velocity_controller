@@ -56,14 +56,18 @@ namespace force_sensitive_cbf
             boost::bind(&ForceSensitiveCBFController::dynamicParamCallback, this, _1, _2));
 
         // Set default values for controller parameters
-        cartesian_force_limit_.setZero();
-        cartesian_force_limit_target_.setZero();
+        cartesian_force_limit_ << 4.0, 4.0, 4.0, 4.0, 4.0, 4.0;
+        cartesian_force_limit_target_ << 5.0, 5.0, 5.0, 5.0, 5.0, 5.0;
 
         // Initialize positions and orientations to origin
         position_d_.setZero();
         orientation_d_.coeffs() << 0.0, 0.0, 0.0, 1.0;
         position_d_target_.setZero();
         orientation_d_target_.coeffs() << 0.0, 0.0, 0.0, 1.0;
+
+        // Set initial velocity commands to zero
+        velocity_command_.setZero();
+        velocity_command_target_.setZero();
 
         return true;
     } // init
@@ -77,6 +81,15 @@ namespace force_sensitive_cbf
         orientation_d_ = Eigen::Quaterniond(initial_transform.rotation());
         position_d_target_ = initial_transform.translation();
         orientation_d_target_ = Eigen::Quaterniond(initial_transform.rotation());
+
+        ROS_DEBUG("Updated pose_d to [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+                  position_d_(0), position_d_(1), position_d_(2),
+                  orientation_d_.x(), orientation_d_.y(), orientation_d_.z(),
+                  orientation_d_.w());
+        ROS_DEBUG("Updated target pose_d to [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+                  position_d_target_(0), position_d_target_(1), position_d_target_(2),
+                  orientation_d_target_.x(), orientation_d_target_.y(), orientation_d_target_.z(),
+                  orientation_d_target_.w());
     } // starting
 
     void ForceSensitiveCBFController::update(const ros::Time & /*time*/,
@@ -110,17 +123,19 @@ namespace force_sensitive_cbf
         // works....
         Eigen::Vector6d external_force = Eigen::Vector6d::Map(
             robot_state.O_F_ext_hat_K.data());
+        // Flip to get force on robot
+        external_force *= -1.0;
         ROS_DEBUG("External force: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]", external_force(0),
                   external_force(1), external_force(2), external_force(3),
                   external_force(4), external_force(5));
 
         // We need to define the CLF and CBF used for the controller.
         //
-        // The CLF is defined as squared error in pose V = 1/2 ||pose - pose_d||^2
+        // The CLF is defined as squared error in pose V = ||pose - pose_d||^2
         //
         // The CBF is defined in terms of the forces on the end effector, and we
         // actually have 6 CBFs (one for each linear and angular DOF)
-        //      h_i = 1/2 (f_i^2 - f_i_max^2)  for i = fx,fy,fz,taux,tauy,tauz
+        //      h_i = f_i^2 - f_i_max^2  for i = fx,fy,fz,taux,tauy,tauz
 
         // We solve for the control input (velocity) using a QP. The variables are the
         // 6DOF velocity of the end effector plus a scalar relaxation of the CLF
@@ -208,7 +223,7 @@ namespace force_sensitive_cbf
         constraint_triplets.push_back({constraint_idx, wy_idx, error(4)});
         constraint_triplets.push_back({constraint_idx, wz_idx, error(5)});
         constraint_triplets.push_back({constraint_idx, relaxation_idx, -1.0});
-        constraint_ub(constraint_idx) = -clf_rate_ * clf_relaxation_penalty_;
+        constraint_ub(constraint_idx) = -clf_rate_ * clf_value + clf_relaxation_penalty_;
         constraint_lb(constraint_idx) = -std::numeric_limits<double>::infinity();
         constraint_idx++;
 
@@ -245,6 +260,8 @@ namespace force_sensitive_cbf
         solver.data()->setLowerBound(constraint_lb);
         solver.data()->setUpperBound(constraint_ub);
 
+        solver.settings()->setVerbosity(false);
+
         solver.initSolver();
         auto exit_code = solver.solveProblem();
         auto solver_status = solver.getStatus();
@@ -265,39 +282,43 @@ namespace force_sensitive_cbf
 
         // Get the optimal solution
         Eigen::VectorXd optimal_solution = solver.getSolution();
-        Eigen::Vector6d velocity_command;
-        velocity_command << optimal_solution.head(6);
+        velocity_command_target_ << optimal_solution.head(6);
         ROS_DEBUG("Optimal solution: v = [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f], r = %.2f",
-                  velocity_command(0), velocity_command(1), velocity_command(2),
-                  velocity_command(3), velocity_command(4), velocity_command(5),
+                  velocity_command_target_(0), velocity_command_target_(1), velocity_command_target_(2),
+                  velocity_command_target_(3), velocity_command_target_(4), velocity_command_target_(5),
                   optimal_solution(6));
 
         // Normalize the given linear and angular velocities to the maximum allowed
         // linear and angular speeds
-        double linear_speed = velocity_command.head(3).norm();
+        double linear_speed = velocity_command_target_.head(3).norm();
         if (linear_speed > linear_speed_limit_)
         {
-            velocity_command.head(3) *= linear_speed_limit_ / linear_speed;
+            velocity_command_target_.head(3) *= linear_speed_limit_ / linear_speed;
         }
-        double angular_speed = velocity_command.tail(3).norm();
+        double angular_speed = velocity_command_target_.tail(3).norm();
         if (angular_speed > angular_speed_limit_)
         {
-            velocity_command.tail(3) *= angular_speed_limit_ / angular_speed;
+            velocity_command_target_.tail(3) *= angular_speed_limit_ / angular_speed;
         }
 
-        ROS_DEBUG("Normalized solution: v = [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
-                  velocity_command(0), velocity_command(1), velocity_command(2),
-                  velocity_command(3), velocity_command(4), velocity_command(5));
+        ROS_DEBUG("Normalized v = [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+                  velocity_command_target_(0), velocity_command_target_(1), velocity_command_target_(2),
+                  velocity_command_target_(3), velocity_command_target_(4), velocity_command_target_(5));
 
+        // Use a moving average filter to smooth the velocity command
+        velocity_command_ = (1 - velocity_smoothing_) * velocity_command_ + velocity_smoothing_ * velocity_command_target_;
+
+        ROS_DEBUG("Smoothed v = [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+                  velocity_command_(0), velocity_command_(1), velocity_command_(2),
+                  velocity_command_(3), velocity_command_(4), velocity_command_(5));
+        
         // Send the velocity command to the robot
         // We need to convert from an Eigen::Vector6d to an array
         std::array<double, 6> velocity_command_array;
-        Eigen::VectorXd::Map(&velocity_command_array[0], velocity_command.size()) = velocity_command;
+        Eigen::VectorXd::Map(&velocity_command_array[0], velocity_command_.size()) = velocity_command_;
         velocity_handle_->setCommand(velocity_command_array);
 
         ROS_DEBUG("ForceSensitiveCBFController update complete");
-
-        return;
     } // update
 
     void ForceSensitiveCBFController::dynamicParamCallback(
@@ -371,7 +392,7 @@ namespace force_sensitive_cbf
             orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
         }
 
-        ROS_DEBUG("Updated target pose to [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+        ROS_DEBUG("Updated target pose_d to [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
                   position_d_target_(0), position_d_target_(1), position_d_target_(2),
                   orientation_d_target_.x(), orientation_d_target_.y(), orientation_d_target_.z(),
                   orientation_d_target_.w());

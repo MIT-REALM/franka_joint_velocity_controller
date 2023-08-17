@@ -46,7 +46,7 @@ RUN git clone https://github.com/osqp/osqp
 WORKDIR /osqp
 RUN mkdir build
 WORKDIR /osqp/build
-RUN cmake -G "Unix Makefiles" ..
+RUN cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 RUN cmake --build . && cmake --build . --target install
 
 # Install OSQP C++ wrapper
@@ -55,7 +55,7 @@ RUN git clone https://github.com/robotology/osqp-eigen.git
 WORKDIR /osqp-eigen
 RUN mkdir build
 WORKDIR /osqp-eigen/build
-RUN cmake .. && make && make install
+RUN cmake -DCMAKE_BUILD_TYPE=Release .. && make && make install
 ENV OsqpEigen_DIR=/osqp-eigen/build
 
 ##################
@@ -70,7 +70,6 @@ RUN source /opt/ros/noetic/setup.sh && catkin_init_workspace src
 
 # Download and build
 RUN git clone --recursive https://github.com/frankaemika/franka_ros src/franka_ros
-COPY cartesian_impedance_example_controller_no_marker.launch src/franka_ros/franka_example_controllers/launch/cartesian_impedance_example_controller_no_marker.launch
 RUN rosdep install --from-paths src --ignore-src --rosdistro noetic -y --skip-keys libfranka
 RUN source /opt/ros/noetic/setup.sh && catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/libfranka/build
 

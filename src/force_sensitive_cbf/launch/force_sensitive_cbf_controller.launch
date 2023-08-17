@@ -1,10 +1,18 @@
 <?xml version="1.0" ?>
 <launch>
+  <!-- Logging -->
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find force_sensitive_cbf)/config/logging.conf"/>
+
+  <!-- Franka control -->
   <arg name="robot" default="fr3" doc="choose your robot. Possible values: [panda, fr3]"/>
   <arg name="arm_id" default="$(arg robot)" />
   <include file="$(find franka_control)/launch/franka_control.launch" pass_all_args="true"/>
   <rosparam command="load" file="$(find force_sensitive_cbf)/config/force_sensitive_cbf_controller.yaml" subst_value="true" />
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="force_sensitive_cbf_controller"/>
+  
+  <!-- Visualization -->
   <node pkg="rviz" type="rviz" output="screen" name="rviz" args="-d $(find franka_example_controllers)/launch/rviz/franka_description_with_marker.rviz -f $(arg arm_id)_link0 --splash-screen $(find franka_visualization)/splash.png"/>
   <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" required="false" />
+
+  <!-- Load our controller -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="force_sensitive_cbf_controller"/>
 </launch>

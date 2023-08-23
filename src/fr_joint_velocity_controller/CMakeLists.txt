@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(force_sensitive_cbf)
+project(fr_joint_velocity_controller)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -9,18 +9,14 @@ find_package(catkin REQUIRED COMPONENTS
   hardware_interface
   pluginlib
   roscpp
-  dynamic_reconfigure
   franka_hw
   eigen_conversions
-  geometry_msgs
-  tf
-  tf_conversions
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 
 find_package(Eigen3 REQUIRED)
-find_package(OsqpEigen REQUIRED)
 find_package(Franka 0.9.0 QUIET)
 if(NOT Franka_FOUND)
   find_package(Franka 0.8.0 REQUIRED)
@@ -44,10 +40,10 @@ list_insert_in_workspace_order(catkin_INCLUDE_DIRS ${Franka_INCLUDE_DIRS} ${catk
 ##   * uncomment the "generate_dynamic_reconfigure_options" section below
 ##     and list every .cfg file to be processed
 
-# Generate dynamic reconfigure parameters in the 'cfg' folder
-generate_dynamic_reconfigure_options(
-  cfg/ForceSensitiveCBF.cfg
-)
+# # Generate dynamic reconfigure parameters in the 'cfg' folder
+# generate_dynamic_reconfigure_options(
+#   cfg/ForceSensitiveCBF.cfg
+# )
 
 
 ###################################
@@ -61,16 +57,13 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES force_sensitive_cbf
+  LIBRARIES fr_joint_velocity_controller
   CATKIN_DEPENDS
     controller_interface
-    dynamic_reconfigure
     franka_hw
     eigen_conversions
-    geometry_msgs
+    sensor_msgs
     hardware_interface
-    tf
-    tf_conversions
     pluginlib
     roscpp
   DEPENDS Franka
@@ -81,8 +74,8 @@ catkin_package(
 ###########
 
 ## Declare a C++ library
-add_library(force_sensitive_cbf
-  src/force_sensitive_cbf_controller.cpp
+add_library(fr_joint_velocity_controller
+  src/fr_joint_velocity_controller.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -91,20 +84,18 @@ add_library(force_sensitive_cbf
 add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
-  ${PROJECT_NAME}_gencfg
 )
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(force_sensitive_cbf PUBLIC
+target_link_libraries(fr_joint_velocity_controller PUBLIC
   ${Franka_LIBRARIES}
-  OsqpEigen::OsqpEigen
   ${catkin_LIBRARIES}
 )
-target_include_directories(force_sensitive_cbf SYSTEM PUBLIC
+target_include_directories(fr_joint_velocity_controller SYSTEM PUBLIC
   ${EIGEN3_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
-target_include_directories(force_sensitive_cbf PUBLIC
+target_include_directories(fr_joint_velocity_controller PUBLIC
   include
 )
 
@@ -114,7 +105,7 @@ target_include_directories(force_sensitive_cbf PUBLIC
 
 
 ## Mark libraries for installation
-install(TARGETS force_sensitive_cbf
+install(TARGETS fr_joint_velocity_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}

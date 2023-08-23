@@ -1,5 +1,4 @@
-
-# Collaborative Manipulation using Force-Sensitive Barrier Functions
+# Joint-space velocity controller for Franka
 
 
 

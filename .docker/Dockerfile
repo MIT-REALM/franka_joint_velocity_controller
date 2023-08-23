@@ -37,28 +37,6 @@ RUN cpack -G DEB
 RUN dpkg -i libfranka*.deb
 
 ##################
-# Other dependencies
-##################
-
-# Install OSQP
-WORKDIR /
-RUN git clone https://github.com/osqp/osqp
-WORKDIR /osqp
-RUN mkdir build
-WORKDIR /osqp/build
-RUN cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-RUN cmake --build . && cmake --build . --target install
-
-# Install OSQP C++ wrapper
-WORKDIR /
-RUN git clone https://github.com/robotology/osqp-eigen.git
-WORKDIR /osqp-eigen
-RUN mkdir build
-WORKDIR /osqp-eigen/build
-RUN cmake -DCMAKE_BUILD_TYPE=Release .. && make && make install
-ENV OsqpEigen_DIR=/osqp-eigen/build
-
-##################
 # franka_ros build
 ##################
 

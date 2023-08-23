@@ -1,0 +1,7 @@
+<library path="lib/libfr_joint_velocity_controller">
+  <class name="fr_joint_velocity_controller/JointVelocityController" type="fr_joint_velocity_controller::JointVelocityController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that tracks desired joint velocities.
+    </description>
+  </class>
+</library>

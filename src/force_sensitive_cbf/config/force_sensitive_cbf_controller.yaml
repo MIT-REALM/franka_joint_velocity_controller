@@ -1,3 +1,0 @@
-force_sensitive_cbf_controller:
-  type: force_sensitive_cbf/ForceSensitiveCBFController
-  arm_id: $(arg arm_id)

@@ -105,6 +105,11 @@ namespace fr_joint_velocity_controller
         // Smoothly update the commanded velocity to match the target
         velocity_command_ = (1 - velocity_smoothing_) * velocity_command_ + velocity_smoothing_ * velocity_command_target_;
 
+        // Send command to arm
+        for (int i = 0; i < velocity_command_.size(); i++) {
+            velocity_joint_handles_[i].setCommand(velocity_command_[i]);
+        }
+
         ROS_DEBUG("JointVelocityController update complete");
     } // update
 
@@ -131,7 +136,7 @@ namespace fr_joint_velocity_controller
             msg->velocity[3], msg->velocity[4], msg->velocity[5], msg->velocity[6];
 
         // Reset the elapsed time since the last target
-        last_target_timestamp_ = msg->header.stamp;
+        last_target_timestamp_ = ros::Time::now();
     }
 
 } // namespace fr_joint_velocity_controller

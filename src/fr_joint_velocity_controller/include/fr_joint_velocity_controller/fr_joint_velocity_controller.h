@@ -42,7 +42,7 @@ namespace fr_joint_velocity_controller
         void targetJointVelocityCallback(const sensor_msgs::JointStateConstPtr &msg);
 
         // Implement a moving average filter to update commanded velocities smoothly
-        double velocity_smoothing_{0.002};
+        double velocity_smoothing_{0.005};
         double max_time_between_targets_{0.1}; // seconds
         Eigen::Vector7d velocity_command_;
         Eigen::Vector7d velocity_command_target_;
